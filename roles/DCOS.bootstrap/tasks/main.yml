@@ -28,15 +28,24 @@
   changed_when: "which_docker.stdout  == ''"
   notify: install docker
 
-- name: Install pip to install python-docker
-  yum:
+- name: "Install pip to install python-docker (RedHat-ish only)"
+  package:
     name: python-pip
     state: present
+  when: ansible_distribution == 'RedHat'
 
-- name: Install python docker bindings
+- name: "Install python docker bindings (RedHat-ish only)"
   pip:
     name: docker
     state: present
+  when: ansible_distribution == 'RedHat'
+
+- name: "Install python docker bindings (Ubuntu only)"
+  apt:
+    name: python3-docker
+    state: present
+  when: ansible_distribution == 'Ubuntu'
+
 
 - name: docker deamon started
   systemd:

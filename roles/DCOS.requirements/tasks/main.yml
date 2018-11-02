@@ -1,3 +1,10 @@
+- name: "Gather os specific variables"
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "vars/{{ ansible_distribution }}.yml"
+    - "vars/generic.yml"
+  tags: vars
+
 # DC/OS System Requirements as of https://docs.mesosphere.com/1.11/installing/production/system-requirements/
 - name: "Disabled firewalld (RHEL only)"
   systemd:
@@ -13,7 +20,7 @@
     enabled: false
   when: ansible_distribution == 'RedHat'
 
-- name: "Docker CE (stable) repository"
+- name: "Docker CE (stable) repository via yum (RedHat-ish only)"
   yum_repository:
     name: docker-ce-stable
     description: Docker CE Repository
@@ -21,10 +28,26 @@
     enabled: yes
     gpgcheck: yes
     gpgkey: https://download.docker.com/linux/centos/gpg
+  when: ansible_distribution == 'RedHat'
+
+- name: "Docker CE (stable) repository signing key (Ubuntu only)"
+  apt_key:
+    id: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+    url: https://download.docker.com/linux/ubuntu/gpg
+
+- name: "Docker CE (stable) repository via apt (Ubuntu only)"
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+  notify: update_local_apt_cache
+  when: ansible_distribution == 'Ubuntu'
+
+- name: Flush handlers now
+  meta: flush_handlers
 
 - name: "Docker installed"
-  yum:
-    name: docker-ce >= 17.05
+  package:
+    name: "docker-ce" # >= 17.05"
     state: present
 
 - name: "Docker running"
@@ -33,27 +56,23 @@
     state: started
     enabled: true
 
-- name: "Install EPEL repositories for requires packages"
+- name: "Install EPEL repositories for requires packages (RedHat-ish only)"
   yum:
     name: "epel-release"
     state: present
+  when: ansible_distribution == 'RedHat'
 
 - name: "Install required system packages"
-  yum:
+  package:
     name: "{{ item }}"
     state: present
-  with_items:
-    - tar
-    - xz
-    - unzip
-    - curl
-    - ipset
-    - jq # not technically required by DC/OS but by this Ansible role for checks
+  with_items: "{{ dcos_prereq_packages }}"
 
-- name: "SELinux '{{ dcos['selinux_mode'] | default('permissive') }}'"
+- name: "SELinux '{{ dcos['selinux_mode'] | default('permissive') }}' (Requires 'python{3}-selinux')"
   selinux:
     policy: targeted
     state: "{{ dcos['selinux_mode'] | default('permissive') }}"
+  when: "ansible_selinux_python_present"
 
 - name: "Ensure groups 'nogroup' and 'docker' exist"
   group:

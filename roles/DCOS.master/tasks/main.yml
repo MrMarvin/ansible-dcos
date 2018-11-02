@@ -17,7 +17,9 @@
     state: link
     force: yes
   notify: reload facts
-- meta: flush_handlers
+
+- name: Flush handlers now
+  meta: flush_handlers
 
 # Installation for fresh nodes
 - import_tasks: dcos_install.yml

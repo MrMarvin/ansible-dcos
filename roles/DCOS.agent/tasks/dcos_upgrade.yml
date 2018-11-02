@@ -14,4 +14,4 @@
   shell: "set -o pipefail; ./dcos_node_upgrade.sh {{ dcos['version'] is version_compare('1.11', '>=')|ternary('--verbose', '') }} | systemd-cat -t dcos-upgrade"
   args:
     chdir: "{{ path_base_tmp }}/{{ dcos_version_specifier }}/upgrade_from_{{ ansible_local.dcos_installation['version'] }}/"
-    executable: "/usr/bin/bash"
+    executable: "bash"

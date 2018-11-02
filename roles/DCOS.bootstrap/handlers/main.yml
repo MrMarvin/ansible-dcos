@@ -1,5 +1,5 @@
 - name: install docker
-  yum:
+  package:
     name: docker
     state: present
 

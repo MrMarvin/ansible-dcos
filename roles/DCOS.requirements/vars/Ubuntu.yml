@@ -1,0 +1,8 @@
+dcos_prereq_packages:
+  - tar
+  - xz-utils
+  - unzip
+  - curl
+  - ipset
+  - jq # not technically required by DC/OS but by this Ansible role for checks
+
